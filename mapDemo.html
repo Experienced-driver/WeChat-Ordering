@@ -1,0 +1,154 @@
+<!html>  
+    <META http-equiv="Content-Type" content="text/html; charset=utf-8">  
+<head>  
+<title>百度地图画多边形</title>  
+</head>  
+<body>  
+<style type="text/css">  
+body, html,#allmap {width: 100%;height: 100%;overflow: hidden;margin:0;}  
+</style>  
+<script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=sSelQoVi2L3KofLo1HOobonW"></script>
+<!--加载鼠标绘制工具-->
+<script type="text/javascript" src="http://api.map.baidu.com/library/DrawingManager/1.4/src/DrawingManager_min.js"></script>
+<link rel="stylesheet" href="http://api.map.baidu.com/library/DrawingManager/1.4/src/DrawingManager_min.css" />
+<!--加载几何运算工具-->
+<script type="text/javascript" src="http://api.map.baidu.com/library/GeoUtils/1.2/src/GeoUtils_min.js"></script>	
+<!--加载检索信息窗口-->
+<script type="text/javascript" src="http://api.map.baidu.com/library/SearchInfoWindow/1.4/src/SearchInfoWindow_min.js"></script>
+<link rel="stylesheet" href="http://api.map.baidu.com/library/SearchInfoWindow/1.4/src/SearchInfoWindow_min.css" />
+
+<script type="text/javascript">  
+var map;  
+function initMap() {  
+  // 百度地图API功能   
+	map = new BMap.Map("allmap");  
+	map.addControl(new BMap.NavigationControl());               // 添加平移缩放控件  
+	map.addControl(new BMap.ScaleControl());                    // 添加比例尺控件  
+	map.addControl(new BMap.OverviewMapControl());              //添加缩略地图控件  
+	map.enableScrollWheelZoom();                            //启用滚轮放大缩小 
+	//map.enableInertialDragging();
+	map.enableContinuousZoom();
+	map.addControl(new BMap.MapTypeControl());          //添加地图类型控件  
+  
+	var size = new BMap.Size(60, 20);
+	map.addControl(new BMap.CityListControl({
+    	anchor: BMAP_ANCHOR_TOP_LEFT,
+    	offset: size,
+    	// 切换城市之间事件
+    	// onChangeBefore: function(){
+    	//    alert('before');
+    	// },
+    	// 切换城市之后事件
+    	// onChangeAfter:function(){
+    	//   alert('after');
+    	// }
+	}));
+  
+  /*
+  var navigationControl = new BMap.NavigationControl({  //// 添加带有定位的导航控件
+    // 靠左上角位置
+  	anchor: BMAP_ANCHOR_TOP_LEFT,
+    // LARGE类型
+    type: BMAP_NAVIGATION_CONTROL_LARGE,
+    // 启用显示定位
+    enableGeolocation: true // 会多出一个点
+  });
+  map.addControl(navigationControl);
+  // 添加定位控件
+  var geolocationControl = new BMap.GeolocationControl();
+  geolocationControl.addEventListener("locationSuccess", function(e){
+    // 定位成功事件
+    var address = '';
+    address += e.addressComponent.province;
+    address += e.addressComponent.city;
+    address += e.addressComponent.district;
+    address += e.addressComponent.street;
+    address += e.addressComponent.streetNumber;
+    //alert("当前定位地址为：" + address);
+  });
+  geolocationControl.addEventListener("locationError",function(e){
+    // 定位失败事件
+    alert(e.message);
+  });
+  map.addControl(geolocationControl);
+  */
+  
+	var point = new BMap.Point(108.896, 34.330);    // 创建点坐标  
+	map.centerAndZoom("成都");                      // 初始化地图,设置中心点坐标和地图级别。
+  
+  
+	var overlays = [];
+	var overlaycomplete = function(e){
+		
+		var points = e.overlay.getPath();
+		console.log(points[0].lng);
+    };
+    var styleOptions = {
+        strokeColor:"red",    //边线颜色。
+        fillColor:"red",      //填充颜色。当参数为空时，圆形将没有填充效果。
+        strokeWeight: 3,       //边线的宽度，以像素为单位。
+        strokeOpacity: 0.8,	   //边线透明度，取值范围0 - 1。
+        fillOpacity: 0.6,      //填充的透明度，取值范围0 - 1。
+        strokeStyle: 'solid' //边线的样式，solid或dashed。
+    }
+    //实例化鼠标绘制工具
+    var drawingManager = new BMapLib.DrawingManager(map, {
+        isOpen: false, //是否开启绘制模式
+        enableDrawingTool: true, //是否显示工具栏
+        drawingToolOptions: {
+            anchor: BMAP_ANCHOR_TOP_RIGHT, //位置
+            offset: new BMap.Size(160, 5), //偏离值
+            drawingModes : [
+            BMAP_DRAWING_CIRCLE,
+            BMAP_DRAWING_POLYGON,
+            BMAP_DRAWING_RECTANGLE 
+         ]
+        },
+        circleOptions: styleOptions, //圆的样式
+        polygonOptions: styleOptions, //多边形的样式
+        rectangleOptions: styleOptions //矩形的样式
+    });  
+	 //添加鼠标绘制工具监听事件，用于获取绘制结果
+    drawingManager.addEventListener('overlaycomplete', overlaycomplete);
+    
+ /*   
+    //添加右键菜单
+    var menu = new BMap.ContextMenu();
+	var txtMenuItem = [
+		{
+			text:'清除',
+			callback:function clearAll(){
+				for(var i = 0; i < overlays.length; i++){
+            		map.removeOverlay(overlays[i]);
+        		}
+        	overlays.length = 0   
+    		} 
+		},
+		{
+			text:'确定',
+			callback:function send(){
+				for(var i = 0; i < overlays.length; i++){
+            		var points = overlays[i].getPath();
+            		alert(points.constructor)
+            		for(var k  in points){
+            			console.debug(points)
+            			alert(k.constructor);
+            		}
+        		}
+			}
+		}
+	];
+	for(var i=0; i < txtMenuItem.length; i++){
+		menu.addItem(new BMap.MenuItem(txtMenuItem[i].text,txtMenuItem[i].callback,100));
+	}
+	map.addContextMenu(menu);
+*/
+
+    
+}  
+</script>  
+</head>  
+<body onLoad="initMap()">  
+  <div id="allmap" style="width: 100%; height: 100%;"></div>  
+</body>  
+</html>  
